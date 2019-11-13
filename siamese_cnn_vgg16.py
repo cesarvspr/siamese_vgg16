@@ -91,7 +91,7 @@ def get_siamese_vgg16(input_shape):
     # Add a dense layer with a sigmoid unit to generate the similarity score
     prediction = Dense(1,activation='sigmoid')(L1_distance)
     
-    # Connect the inputs with the outputs
+    # Connect the inputs with the output
     siamese_net = model(inputs=[left_input,right_input],outputs=prediction)    
     # return the model
     return siamese_net    
