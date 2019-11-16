@@ -17,6 +17,12 @@ from keras.applications.vgg16 import decode_predictions
 from keras.applications.vgg16 import preprocess_input
 from keras.preprocessing.image import img_to_array
 from keras.utils.vis_utils import plot_model
+import keras_vggface
+from keras_vggface.vggface import VGGFace
+from keras.preprocessing import image
+from keras.applications.resnet50 import preprocess_input
+from keras import layers
+from keras.layers import Flatten
 
 def euclidean_distance_loss(y_true, y_pred):
     """
@@ -25,6 +31,14 @@ def euclidean_distance_loss(y_true, y_pred):
     :return: float
     """
     return K.sqrt(K.sum(K.square(y_pred - y_true), axis=-1))
+
+def euclideanDistance(base, teste):
+    var = base-teste
+    var = np.sum(np.multiply(var, var))
+    var = np.sqrt(var)
+    return var
+
+
 
 def triplet_loss(embeddings):
     """
@@ -64,7 +78,7 @@ def get_siamese_vgg16(input_shape):
 
     #model.summary()
 
-    # Generate the encodings (feature vectors) for the two images
+    # Generate the encodings (feature vectors) for the two image
     encoded_l = model(left_input)
     encoded_r = model(right_input)
 
@@ -99,14 +113,47 @@ def get_siamese_vgg16(input_shape):
     model.summary()
     
 
+        
 
 
 
 
+def main():
 
-def main(): 
-    model = get_siamese_vgg16 ((224,224,3))
-    #model.compile(loss='binary_crossentropy', metrics=['binary_accuracy'],optimizer='sgd')
+
+    def read(nome):
+        # load an image from file
+        image = load_img(nome, target_size=(224, 224))
+        image = img_to_array(image)
+        image = np.expand_dims(image, axis=0)
+        image = preprocess_input(image)
+        return image
+    Model = Sequential()
+
+    vgg_model = VGGFace(include_top=True, input_shape=(224,224,3))
+    vgg_model.summary()
+    print('----------------------------------------')
+
+    model = Model(inputs=vgg_model.layers[0].input, outputs=vgg_model.layers[-2].output)
+
+'''
+    last = model(inputs=vgg16_model.layers[0].input, output=vgg16_model.layers[-2].output)
+    last_layer = vgg16_model.get_layer(name='fc8', index=None)
+'''
+'''
+
+    pred = last.predict(read('./image.jpeg'))
+    preds2 = last.predict(read('./image2.jpeg'))
+
+    print(pred)
+    print(preds2)
+
+
+
+    last_layer = vgg16_model.get_layer('avg_pool').output
+    out = Flatten(name='flatten')(last_layer)
+    preds = model.predict(x)
+'''
 
 if __name__ == "__main__":
     main()
