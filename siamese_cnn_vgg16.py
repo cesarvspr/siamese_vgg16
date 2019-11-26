@@ -1,7 +1,7 @@
 import numpy as np
 import keras
 from keras import backend as K
-from keras.models import Sequential
+from keras.models import Model, Sequential
 from keras.layers import Activation, Conv2D, MaxPool2D, Flatten, Dense, Input, Subtract, Lambda
 from keras.layers.core import Dense, Flatten
 from keras.optimizers import Adam
@@ -24,21 +24,13 @@ from keras.applications.resnet50 import preprocess_input
 from keras import layers
 from keras.layers import Flatten
 
-def euclidean_distance_loss(y_true, y_pred):
-    """
-    :param y_true: TensorFlow/Theano tensor
-    :param y_pred: TensorFlow/Theano tensor of the same shape as y_true
-    :return: float
-    """
-    return K.sqrt(K.sum(K.square(y_pred - y_true), axis=-1))
+
 
 def euclideanDistance(base, teste):
     var = base-teste
     var = np.sum(np.multiply(var, var))
     var = np.sqrt(var)
     return var
-
-
 
 def triplet_loss(embeddings):
     """
@@ -55,100 +47,38 @@ def triplet_loss(embeddings):
     
     return K.mean(loss)
 
-def get_siamese_vgg16(input_shape):
-
-    left_input = Input(input_shape)
-    right_input = Input(input_shape)
-
-    vgg16_model = keras.applications.vgg16.VGG16()
-    model = Sequential()
-    #copy the vgg (not last layer) and create own 
-    for layer in vgg16_model.layers[:-1]:
-        model.add(layer)
-        #model.summary()
-   
-    #freeze wheights
-    for layer in model.layers:
-        layer.trainable = False 
-    
-
-    #fine-tuning
-    #add layer to create an array of 4096 dimension
-    model.add(Dense(units=4096, activation='sigmoid'))
-
-    #model.summary()
-
-    # Generate the encodings (feature vectors) for the two image
-    encoded_l = model(left_input)
-    encoded_r = model(right_input)
-
-
-    '''
-    #start predict 
+def read(nome):
     # load an image from file
-    image1 = load_img(input1_path, target_size=(224, 224))
-    # convert the image pixels to a numpy array
-    image1 = img_to_array(image1)
-    # reshape data for the model
-    image1 = image1.reshape((1, image1.shape[0], image1.shape[1], image1.shape[2]))
-    # prepare the image for the VGG model
-    image1 = preprocess_input(image1)
-    # predict the probability across all output classes
-    print(1)
-    yhat = model.predict(image1)
-    print(yhat)
-    '''
-    # Add a customized layer to compute the absolute difference between the encodings
-    L1_layer = Lambda(lambda tensors:K.abs(tensors[0] - tensors[1]))
-    L1_distance = L1_layer([encoded_l, encoded_r])    
-
-    # Add a dense layer with a sigmoid unit to generate the similarity score
-    prediction = Dense(1,activation='sigmoid')(L1_distance)
-    
-    # Connect the inputs with the output
-    siamese_net = model(inputs=[left_input,right_input],outputs=prediction)    
-    # return the model
-    return siamese_net    
-
-    model.summary()
-    
-
-        
-
-
-
+    image = load_img(nome, target_size=(224, 224))
+    image = img_to_array(image)
+    image = np.expand_dims(image, axis=0)
+    image = preprocess_input(image)
+    return image 
 
 def main():
 
+    model = Sequential()
 
-    def read(nome):
-        # load an image from file
-        image = load_img(nome, target_size=(224, 224))
-        image = img_to_array(image)
-        image = np.expand_dims(image, axis=0)
-        image = preprocess_input(image)
-        return image
-    Model = Sequential()
+    
 
     vgg_model = VGGFace(include_top=True, input_shape=(224,224,3))
     vgg_model.summary()
     print('----------------------------------------')
+    
+    print(vgg_model.layers[24].output)
+    print(vgg_model.layers[-2].output)
 
-    model = Model(inputs=vgg_model.layers[0].input, outputs=vgg_model.layers[-2].output)
+    model = Model(inputs=vgg_model.layers[0].input, outputs=vgg_model.layers[24].output)
+
+    return(model.predict(read('./image.jpeg')))
+
 
 '''
-    last = model(inputs=vgg16_model.layers[0].input, output=vgg16_model.layers[-2].output)
-    last_layer = vgg16_model.get_layer(name='fc8', index=None)
-'''
-'''
-
     pred = last.predict(read('./image.jpeg'))
     preds2 = last.predict(read('./image2.jpeg'))
 
     print(pred)
     print(preds2)
-
-
 
     last_layer = vgg16_model.get_layer('avg_pool').output
     out = Flatten(name='flatten')(last_layer)
